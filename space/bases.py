@@ -3,12 +3,18 @@ from threading import Thread
 from space.rocket import Rocket
 from random import choice
 
+'''
+- Caso a lua precise se recursos, manda um foguete Lion para ela
+  se não, ataca um planeta com outro foguete criado aleatoriamente
+- Checa se tem recursos suficientes para lançar um foguete (utilizar mutex aqui para checar essas variáveis)
+'''
+
 class SpaceBase(Thread):
 
     ################################################
     # O CONSTRUTOR DA CLASSE NÃO PODE SER ALTERADO #
     ################################################
-    def __init__(self, name, uranium, fuel, rockets):
+    def __init__(self, name, fuel, uranium, rockets):
         Thread.__init__(self)
         self.name = name
         self.uranium = 0
@@ -50,11 +56,43 @@ class SpaceBase(Thread):
                 print("Invalid rocket name")
 
 
-    def refuel_oil():
-        pass
+    def refuel_oil(self):
 
-    def refuel_uranium():
-        pass   
+        oil = globals.mines['oil_earth']
+        
+        # Vemos qual quantidade tem que ser verificada dependendo da base
+        if self.name == 'CANAVERAL CAPE' or self.name == 'MOSCOW':
+            unidades_oil = 120
+        elif self.name == 'ALCANTARA':
+            unidades_oil = 100
+        
+        # Verificamos se precisa repor o combustivel
+        if self.oil < unidades_oil:
+            # Mutex para o acesso a mina de combustivel
+            with globals.lock_oil:
+                oil_atual = oil.unities
+                if self.constraints[1] - self.oil >= oil_atual:
+                    self.oil += oil_atual
+                    oil.unities -= oil_atual
+                else:
+                    self.uranium = self.constraints[1]
+                    oil.unities -= self.constraints[1] - self.oil
+
+    def refuel_uranium(self):
+
+        mina = globals.mines['uranium_earth']
+
+        # Verificamos se é preciso repor o uranio
+        if self.uranium < 35:
+            # Mutex para o acesso a mina de uranio
+            with globals.lock_uranio:
+                mina_atual = mina.unities
+                if self.constraints[0] - self.uranium >= mina_atual:
+                    self.uranium += mina_atual
+                    mina.unities -= mina_atual
+                else:
+                    self.uranium = self.constraints[0]
+                    mina.unities -= self.constraints[0] - self.uranium
 
     def run(self):
         globals.acquire_print()
@@ -65,5 +103,7 @@ class SpaceBase(Thread):
             pass
 
         while(True):
-
+            # Lógica dos ataques aos planetas e reposição de recursos da lua quando necessário
+            self.refuel_oil()
+            self.refuel_uranium()
             pass

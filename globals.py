@@ -13,6 +13,8 @@ mutex_print = Lock()
 planets = {}
 bases = {}
 mines = {}
+lock_uranio = Lock()
+lock_oil = Lock()
 simulation_time = None
 
 def acquire_print():

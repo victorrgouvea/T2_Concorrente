@@ -28,7 +28,10 @@ class Rocket:
         # usar essa função.
         self.simulation_time_voyage(planet)
         failure =  self.do_we_have_a_problem()
-        self.nuke(planet)
+        # Caso o foguete não falhe ou seja destruído, ele atinge o planeta
+        if failure == False:    
+            self.nuke(planet)
+        # Usar semáforo aqui para dizer que não tem nenhum foguete indo para o planeta ????
 
 
 
