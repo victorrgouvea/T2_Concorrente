@@ -12,14 +12,14 @@ class Planet(Thread):
         self.name = name
 
     def nuke_detected(self):
-        while(self.terraform > 0):
-            before_percentage = self.terraform
-            while(before_percentage == self.terraform):
-                pass
-            print(f"[NUKE DETECTION] - The planet {self.name} was bombed. {self.terraform}% UNHABITABLE")
+        print(f"[NUKE DETECTION] - The planet {self.name} was bombed. {self.terraform}% UNHABITABLE")
 
     def print_planet_info(self):
         print(f"🪐 - [{self.name}] → {self.terraform}% UNINHABITABLE")
+
+    def planet_is_safe(self):
+        print(f"🪐 - {self.name} IS COMPLETELY HABITABLE!")
+        del globals.planets[self.name.lower()]
 
     def run(self):
         globals.acquire_print()
@@ -29,5 +29,15 @@ class Planet(Thread):
         while(globals.get_release_system() == False):
             pass
 
-        while(True):
+        # Enquanto o planeta não for habitável, o satelite
+        # detecta a chegada de foguetes
+        while(self.terraform > 0):
+            
+            # Utilizo um semaforo que só é liberado 
+            # quando uma nuke atinge o planeta
+            (globals.planet_locks.nuke_event[self.name.lower()]).acquire()
             self.nuke_detected()
+
+        # Após o planeta ser terraformado, ele é retirado da
+        # lista de planetas para não ser bombardeado novamente
+        self.planet_is_safe()

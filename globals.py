@@ -1,4 +1,5 @@
-from threading import Lock
+from threading import Lock, Semaphore
+from space.planetLocks import PlanetLocks
 
 #  A total alteração deste arquivo é permitida.
 #  Lembre-se de que algumas variáveis globais são setadas no arquivo simulation.py
@@ -16,6 +17,7 @@ mines = {}
 lock_uranio = Lock()
 lock_oil = Lock()
 simulation_time = None
+planet_locks = PlanetLocks()
 
 def acquire_print():
     global mutex_print

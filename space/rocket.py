@@ -1,4 +1,5 @@
 from random import randrange, random
+import globals
 from time import sleep
 
 
@@ -15,23 +16,76 @@ class Rocket:
             self.uranium_cargo = 0
             
 
-    def nuke(self, planet): # Permitida a alteração
-        self.damage()
-        print(f"[EXPLOSION] - The {self.name} ROCKET reached the planet {planet.name} on North Pole")
-        print(f"[EXPLOSION] - The {self.name} ROCKET reached the planet {planet.name} on South Pole")
-        pass
-    
-    def voyage(self, planet): # Permitida a alteração (com ressalvas)
+    def nuke(self, planet):
+        '''Explosão do foguete ao chegar no planeta'''
+        
+        dano = self.damage()
+        nome = planet.name.lower()
+        polo = self.nuke_pole(planet)
 
+        # Utilizo um lock para atualizar a variável de 
+        # terraform com o dano causado pelo foguete
+        with globals.planet_locks.terraform_locks[nome]:
+            planet.terraform -= dano
+
+        # Dependendo do polo atingido pelo foguete, fazemos o 
+        # print e o release do lock do respectivo polo
+        if polo == 'norte':
+            print(f"[EXPLOSION] - The {self.name} ROCKET reached the planet {planet.name} on North Pole")
+            (globals.planet_locks.polo_norte_locks[nome]).release()
+        else:
+            print(f"[EXPLOSION] - The {self.name} ROCKET reached the planet {planet.name} on South Pole")
+            (globals.planet_locks.polo_sul_locks[nome]).release()
+
+        # Aqui é feito o release do semaforo para indicar 
+        # que uma nuke foi detectada naquele planeta
+        (globals.planet_locks.nuke_event[nome]).release()
+
+
+    def nuke_pole(self, planet):
+        '''Decide qual polo o foguete vai explodir'''
+        
+        nome = planet.name.lower()
+
+        # Caso ja tenha algum foguete indo para o norte:
+        if (globals.planet_locks.polo_norte_locks[nome]).locked():
+            
+            # E caso tenha outro foguete também indo ao sul,
+            # ele espera até que o foguete com direção ao polo norte 
+            # o atinga, para então se encaminhar ao mesmo polo
+            if (globals.planet_locks.polo_sul_locks[nome]).locked():
+                (globals.planet_locks.polo_norte_locks[nome]).acquire()
+                return 'norte'
+            
+            # Caso o polo sul não seja destino de nenhum foguete, ele se direciona para lá
+            else:
+                (globals.planet_locks.polo_sul_locks[nome]).acquire()
+                return 'sul'
+        
+        # Caso nenhum foguete esteja direcionado ao polo norte, ele vai para lá
+        else:
+            (globals.planet_locks.polo_norte_locks[nome]).acquire()
+            return 'norte'
+    
+    def voyage(self, planet):
+        '''Eventos do foguete após o lançamento'''
+        
         # Essa chamada de código (do_we_have_a_problem e simulation_time_voyage) não pode ser retirada.
         # Você pode inserir código antes ou depois dela e deve
         # usar essa função.
         self.simulation_time_voyage(planet)
-        failure =  self.do_we_have_a_problem()
-        # Caso o foguete não falhe ou seja destruído, ele atinge o planeta
-        if failure == False:    
+        failure = self.do_we_have_a_problem()
+        
+        # Caso o foguete não falhe ou seja destruído e o planeta
+        # ainda não esteja terraformado, ele atinge o planeta
+        # (utlizo os locks dessa maneira para o mutex do terraform
+        # não ficar travado durante toda a execução do nuke)
+        (globals.planet_locks.terraform_locks[planet.name]).acquire()
+        if failure == False and planet.terraform > 0:
+            (globals.planet_locks.terraform_locks[planet.name]).release()
             self.nuke(planet)
-        # Usar semáforo aqui para dizer que não tem nenhum foguete indo para o planeta ????
+        else:
+            (globals.planet_locks.terraform_locks[planet.name]).release()
 
 
 
