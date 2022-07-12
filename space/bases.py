@@ -1,3 +1,4 @@
+from platform import release
 import globals
 from threading import Thread
 from space.rocket import Rocket
@@ -71,6 +72,9 @@ class SpaceBase(Thread):
                 abastecido = True
     
     def tenta_reabastecer_base(self, q_uranium, q_fuel):
+        # CRIAR DUAS THREADS PARA FAZER A VERIFICAÇÃO
+        # PARELELAMENTE
+        
         # não tem recurso suficiente pra lançar o foguete
         uranium_ok = False
         fuel_ok = False
@@ -110,16 +114,22 @@ class SpaceBase(Thread):
 
         # verifica se é a lua que quer ser reabastecida
         if self.name == 'MOON':
-            pass
+            globals.set_abastecer_lua_oil(True)
+            
+            # mutex que controla a chegada do foguete lion na lua
+            globals.acquire_reabastecer_refuel_oil()
+            self.fuel += 120
+            print('Lua abastecida de uranium com sucesso!')
+
         else:
             # Mutex para o acesso a mina de combustivel
             with globals.lock_oil:
                 oil_atual = oil.unities
                 if self.constraints[1] - self.oil >= oil_atual:
-                    self.oil += oil_atual
+                    self.fuel += oil_atual
                     oil.unities -= oil_atual
                 else:
-                    self.uranium = self.constraints[1]
+                    self.fuel = self.constraints[1]
                     oil.unities -= self.constraints[1] - self.oil
 
     def refuel_uranium(self):
@@ -128,7 +138,12 @@ class SpaceBase(Thread):
 
         # verifica se é a lua que quer ser reabastecida
         if self.name == 'MOON':
-            pass
+            globals.set_abastecer_lua_uranium(True)
+
+            # mutex que controla a chegada do foguete lion na lua
+            globals.acquire_reabastecer_refuel_uranium()
+            self.uranium += 75
+            print('Lua abastecida de combustível com sucesso!')
         else:
             # Mutex para o acesso a mina de uranio
             with globals.lock_uranio:
@@ -139,8 +154,57 @@ class SpaceBase(Thread):
                 else:
                     self.uranium = self.constraints[0]
                     mina.unities -= self.constraints[0] - self.uranium
+    
+    def verifica_abastecimento_lua(self):
+        # Lógica dos ataques aos planetas e reposição de recursos da lua quando necessário
+        # condicional para saber se a lua precisa ser reabastecida
+
+        # URANIUM E OIL
+        globals.acquire_verifica_abastecer_lua_uranium()
+        globals.acquire_verifica_abastecer_lua_oil()
+        if (globals.get_abastecer_lua_uranium() == True & globals.get_abastecer_lua_oil() == True):
+            globals.set_abastecer_lua_uranium(False)
+            globals.set_abastecer_lua_oil(False)
+            globals.release_verifica_abastecer_lua_uranium()
+            globals.release_verifica_abastecer_lua_oil()
+
+
+
+
+        else:
+            globals.release_verifica_abastecer_lua_uranium()
+            globals.release_verifica_abastecer_lua_oil()
+        
+        
+        # SÓ URANIUM
+        globals.acquire_verifica_abastecer_lua_uranium()
+        if (globals.get_abastecer_lua_uranium() == True):
+            globals.set_abastecer_lua_uranium(False)
+            globals.release_verifica_abastecer_lua_oil()
+
+
+
+
+        else:
+            globals.release_verifica_abastecer_lua_uranium()
+        
+        # SÓ OIL
+        globals.acquire_verifica_abastecer_lua_oil()
+        if (globals.get_abastecer_lua_oil() == True):
+            globals.set_abastecer_lua_oil(False)
+            globals.release_verifica_abastecer_lua_oil()
+        
+  
+
+        else:
+            globals.release_verifica_abastecer_lua_oil()
+
 
     def run(self):
+        # adquiri o mutex que controla o abastecimento da lua
+        globals.acquire_reabastecer_refuel_oil()
+        globals.acquire_reabastecer_refuel_uranium()
+
         globals.acquire_print()
         self.print_space_base_info()
         globals.release_print()
@@ -149,7 +213,8 @@ class SpaceBase(Thread):
             pass
 
         while(True):
-            # Lógica dos ataques aos planetas e reposição de recursos da lua quando necessário
-            self.refuel_oil()
-            self.refuel_uranium()
+
+            self.verifica_abastecimento_lua()
+
+            
             pass

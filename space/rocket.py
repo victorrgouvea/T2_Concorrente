@@ -67,7 +67,21 @@ class Rocket:
             (globals.planet_locks.polo_norte_locks[nome]).acquire()
             return 'norte'
     
-    def voyage(self, planet):
+    def reabastecer_lua_uranium(self):
+        print('Abastecimento da lua de uranium iniciado!')
+        globals.release_reabastecer_refuel_uranium()
+        globals.acquire_reabastecer_refuel_uranium()
+
+        
+    
+    def reabastecer_lua_oil(self):
+        print('Abastecimento da lua de combustível iniciado!')
+        globals.release_reabastecer_refuel_oil()
+        globals.acquire_reabastecer_refuel_oil()
+
+
+
+    def voyage(self, planet, resource):
         '''Eventos do foguete após o lançamento'''
         
         # Essa chamada de código (do_we_have_a_problem e simulation_time_voyage) não pode ser retirada.
@@ -75,17 +89,35 @@ class Rocket:
         # usar essa função.
         self.simulation_time_voyage(planet)
         failure = self.do_we_have_a_problem()
+
+        if (self.name == 'LION'):
+            if (failure == False):
+                if (resource == 'URANIUM E OIL'):
+                    self.reabastecer_lua_uranium()
+                    self.reabastecer_lua_oil()
+
+                elif (resource ==  'URANIUM'):
+                    self.reabastecer_lua_uranium()
         
-        # Caso o foguete não falhe ou seja destruído e o planeta
-        # ainda não esteja terraformado, ele atinge o planeta
-        # (utlizo os locks dessa maneira para o mutex do terraform
-        # não ficar travado durante toda a execução do nuke)
-        (globals.planet_locks.terraform_locks[planet.name]).acquire()
-        if failure == False and planet.terraform > 0:
-            (globals.planet_locks.terraform_locks[planet.name]).release()
-            self.nuke(planet)
+                
+                elif (resource == 'OIL'):
+                    self.reabastecer_lua_oil()
+
+            else:
+                print('Planeta destino inválido ou falha no lançamento!')
+    
         else:
-            (globals.planet_locks.terraform_locks[planet.name]).release()
+            # Caso o foguete não falhe ou seja destruído e o planeta
+            # ainda não esteja terraformado, ele atinge o planeta
+            # (utlizo os locks dessa maneira para o mutex do terraform
+            # não ficar travado durante toda a execução do nuke)
+            (globals.planet_locks.terraform_locks[planet.name]).acquire()
+            if failure == False and planet.terraform > 0:
+                (globals.planet_locks.terraform_locks[planet.name]).release()
+                self.nuke(planet)
+            else:
+                (globals.planet_locks.terraform_locks[planet.name]).release()
+
 
 
 
@@ -124,7 +156,7 @@ class Rocket:
     def damage(self):
         return random()
 
-    def launch(self, base, planet):
+    def launch(self, base, planet, resource):
         if(self.successfull_launch(base)):
             print(f"[{self.name} - {self.id}] launched.")
-            self.voyage(planet)        
+            self.voyage(planet, resource)        
