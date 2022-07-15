@@ -25,29 +25,19 @@ planet_locks = PlanetLocks()
 # Importante que quando o código for
 # inicializado, dar um aquire no reabastecer refuel
 # pra que seja inicializado adquirido
-abastecer_lua_uranium = False
-abastecer_lua_oil = False
+abastecer_lua = False
 
-def get_abastecer_lua_uranium():
-    global abastecer_lua_uranium
-    return abastecer_lua_uranium
+def get_abastecer_lua():
+    global abastecer_lua
+    return abastecer_lua
 
-def set_abastecer_lua_uranium(valor):
-    global abastecer_lua_uranium
-    abastecer_lua_uranium = valor
-
-def get_abastecer_lua_oil():
-    global abastecer_lua_oil
-    return abastecer_lua_oil
-
-def set_abastecer_lua_oil(valor):
-    global abastecer_lua_oil
-    abastecer_lua_oil = valor
+def set_abastecer_lua(valor):
+    global abastecer_lua
+    abastecer_lua = valor
 
 # mutex localizado nas funções reabastecer_lua
 # e refuels, utilizado na lógica.
 mutex_reabastecer_refuel_uranium = Lock()
-mutex_reabastecer_refuel_oil = Lock()
 
 def acquire_reabastecer_refuel_uranium():
     global mutex_reabastecer_refuel_uranium
@@ -68,24 +58,15 @@ def release_reabastecer_refuel_oil():
     mutex_reabastecer_refuel_oil.release()
 
 # mutex localizado na verificação de abastecimento da lua
-mutex_verifica_abastecer_lua_uranium = Lock()
-mutex_verifica_abastecer_lua_oil = Lock()
+mutex_verifica_abastecer_lua = Semaphore(value = 0)
 
-def acquire_verifica_abastecer_lua_uranium():
-    global mutex_verifica_abastecer_lua_uranium
-    mutex_verifica_abastecer_lua_uranium.acquire()
+def acquire_verifica_abastecer_lua():
+    global mutex_verifica_abastecer_lua
+    mutex_verifica_abastecer_lua.acquire()
 
-def release_verifica_abastecer_lua_uranium():
-    global mutex_verifica_abastecer_lua_uranium
-    mutex_verifica_abastecer_lua_uranium.release()
-
-def acquire_verifica_abastecer_lua_oil():
-    global mutex_verifica_abastecer_lua_oil
-    mutex_verifica_abastecer_lua_oil.acquire()
-
-def release_verifica_abastecer_lua_oil():
-    global mutex_verifica_abastecer_lua_oil
-    mutex_verifica_abastecer_lua_oil.release()
+def release_verifica_abastecer_lua():
+    global mutex_verifica_abastecer_lua
+    mutex_verifica_abastecer_lua.release()
 
 # ===========================
 def acquire_print():

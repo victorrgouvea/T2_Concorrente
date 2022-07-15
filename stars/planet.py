@@ -6,7 +6,7 @@ class Planet(Thread):
     ################################################
     # O CONSTRUTOR DA CLASSE NÃO PODE SER ALTERADO #
     ################################################
-    def __init__(self, terraform,name):
+    def __init__(self, terraform, name):
         Thread.__init__(self)
         self.terraform = terraform
         self.name = name

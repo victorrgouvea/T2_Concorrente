@@ -92,11 +92,7 @@ class Rocket:
 
         if (self.name == 'LION'):
             if (failure == False):
-                if (resource == 'URANIUM E OIL'):
-                    self.reabastecer_lua_uranium()
-                    self.reabastecer_lua_oil()
-
-                elif (resource ==  'URANIUM'):
+                if (resource ==  'URANIUM'):
                     self.reabastecer_lua_uranium()
         
                 
