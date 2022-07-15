@@ -213,9 +213,7 @@ class SpaceBase(Thread):
             print('A base ' + self.name + ' tentou lançar o foguete ' + foguete + ', mas não conseguiu por falta de recursos!')
 
     def run(self):
-        # adquiri o mutex que controla o abastecimento da lua
-        globals.acquire_reabastecer_refuel_oil()
-        globals.acquire_reabastecer_refuel_uranium()
+        # adquiri o mutex que controla o abastecimento da luas
 
         foguetes = ['DRAGON', 'FALCON']
         planetas = ['MARS', 'IO', 'GANIMEDES', 'EUROPA']
