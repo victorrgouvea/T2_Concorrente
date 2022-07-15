@@ -19,7 +19,7 @@ mines = {}
 lock_uranio = Lock()
 lock_oil = Lock()
 simulation_time = None
-planet_locks = PlanetLocks()
+planet_locks = None
 
 # Abastecimento da lua
 # Importante que quando o código for
@@ -103,7 +103,9 @@ def get_mines_ref():
 
 def set_release_system():
     global release_system
+    global planet_locks
     release_system = True
+    planet_locks = PlanetLocks()
 
 def get_release_system():
     global release_system

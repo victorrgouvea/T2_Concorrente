@@ -3,7 +3,6 @@ from secrets import choice
 import globals
 from threading import Thread
 from space.rocket import Rocket
-from random import Choice
 
 
 '''
@@ -226,6 +225,5 @@ class SpaceBase(Thread):
             pass
 
         while(True):
-            choice()
             self.verifica_abastecimento_lua()
             self.lanca_foguete(choice(foguetes), choice(planetas))
