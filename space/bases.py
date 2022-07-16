@@ -1,8 +1,7 @@
-from platform import release
-from secrets import choice
 import globals
 from threading import Thread
 from space.rocket import Rocket
+from random import choice
 
 
 
@@ -23,6 +22,9 @@ class SpaceBase(Thread):
         print(f"🔭 - [{self.name}] → 🪨  {self.uranium}/{self.constraints[0]} URANIUM  ⛽ {self.fuel}/{self.constraints[1]}  🚀 {self.rockets}/{self.constraints[2]}")
     
     def base_rocket_resources(self, rocket_name):
+        
+        # Aqui é definido, baseado no nome do foguete que será lançado,
+        # a quantidade de recursos necessárias para o lançamento
         match rocket_name:
             case 'DRAGON':
                 quant = {'ALCANTARA': 70, 'MOON': 50, 'MOSCOW': 100, 'CANAVERAL CAPE': 100, 'URANIUM': 35}
@@ -31,8 +33,7 @@ class SpaceBase(Thread):
                 quant = {'ALCANTARA': 100, 'MOON': 90, 'MOSCOW': 120, 'CANAVERAL CAPE': 120, 'URANIUM': 35}
                
             case 'LION':
-                # como vai com recursos dentro, verificar valor correto
-                quant= {'ALCANTARA': 100, 'MOON': 'OUT', 'MOSCOW': 115, 'CANAVERAL CAPE': 115, 'URANIUM': 75}
+                quant= {'ALCANTARA': 100, 'MOON': 'OUT', 'MOSCOW': 115, 'CANAVERAL CAPE': 115}
         
             case _:
                 print("Invalid rocket name")
@@ -48,31 +49,54 @@ class SpaceBase(Thread):
       
         while(not(abastecido)):
 
-            # verifica se tem recurso suficiente
+            # Caso seja o foguete lion, precisamos saber se temos
+            # recursos suficientes para o seu lançamento e para
+            # a sua carga com os recursos da lua
+            if rocket_name == 'LION':
+                resources = globals.get_moon_needs()
+                uranio, fuel = resources
+                fuel += quant[self.name]
+
+            # Se for um dos foguetes de ataque, só precisamos
+            # dos recursos para o lançamento
+            else:
+                uranio = quant['URANIUM']
+                fuel = quant[self.name]
             
-            if self.uranium >= quant['URANIUM']:
+            # Verificação se tem recursos suficientes para o foguete
+            # Também verifico o caso de ser o segundo loop após a
+            # tentativa de reabastecer a base e o recurso ja ser suficiente
+            # no primeiro loop. Se ele já foi suficiente no primeiro loop e
+            # o desconto da sua quantidade já foi feita, não posso repetir isso
+            # no segundo loop
+            if (self.uranium >= uranio) and uranium_ok == False:
                 uranium_ok = True
-                self.uranium = self.uranium - quant['URANIUM']
-            
-            if (self.fuel >= quant[self.name]):
+                self.uranium -= uranio
+                
+            if (self.fuel >= fuel) and oil_ok == False:
                 oil_ok = True
-                self.fuel -= quant[self.name]
+                self.fuel -= fuel
 
             # não tem recurso suficiente pra abastecer o foguete
             if (not(uranium_ok) or not(oil_ok)):
                 # tenta reabastecer a base
                 # se conseguir o loop é refeito
                 
-                abastecido = self.tenta_reabastecer_base(quant['URANIUM'], quant[self.name])
+                abastecido = self.tenta_reabastecer_base(uranio, fuel)
 
                 # caso não tenha conseguido abastecer um dos combustíveis
-                # ele devolve a quantidade já retirada
+                # ele devolve a quantidade já retirada e, no caso do Lion,
+                # ele seta a variável de abastecer a lua como True indicando
+                # que não conseguiu lançar o foguete e a lua ainda não foi reabastecida
                 if (abastecido):
                     if (uranium_ok):
-                        self.uranium += quant['URANIUM']
+                        self.uranium += uranio
                     
                     if (oil_ok):
-                        self.fuel += quant[self.name]
+                        self.fuel += fuel
+
+                    if rocket_name == 'LION':
+                        globals.set_abastecer_lua(True)
 
                     return False
             
@@ -82,8 +106,6 @@ class SpaceBase(Thread):
                 return True
     
     def tenta_reabastecer_base(self, q_uranium, q_fuel):
-        # CRIAR DUAS THREADS PARA FAZER A VERIFICAÇÃO
-        # PARELELAMENTE
         
         # não tem recurso suficiente pra lançar o foguete
         uranium_ok = False
@@ -125,8 +147,6 @@ class SpaceBase(Thread):
         # verifica se é a lua que quer ser reabastecida
         if self.name == 'MOON':
             
-            globals.set_abastecer_lua(True)
-            
             # leva o maximo de combustivel que cabe no foguete
             fuel = 120
 
@@ -140,8 +160,11 @@ class SpaceBase(Thread):
             else:
                 uranium = 75
 
+            # Indica as outras bases que precisa de recursos e 
+            # as quantidades necessárias
             globals.set_moon_needs((uranium, fuel))
-            
+            globals.set_abastecer_lua(True)
+
             # semaforo que controla a chegada do foguete lion na lua
             globals.acquire_sem_refuel()
 
@@ -169,7 +192,6 @@ class SpaceBase(Thread):
 
         # verifica se é a lua que quer ser reabastecida
         if self.name == 'MOON':
-            globals.set_abastecer_lua(True)
 
             # leva o maximo de uranio que cabe no foguete
             uranium = 75
@@ -184,8 +206,10 @@ class SpaceBase(Thread):
             else:
                 fuel = 120
 
-            # seta na variavel global quantos recursos serão enviados para a lua
+            # Indica as outras bases que precisa de recursos e 
+            # as quantidades necessárias
             globals.set_moon_needs((uranium, fuel))
+            globals.set_abastecer_lua(True)
 
             # semaforo que controla a chegada do foguete lion na lua
             globals.acquire_sem_refuel()
@@ -258,9 +282,7 @@ class SpaceBase(Thread):
             # Criação da thread que fará o lançamento e todas as ações do foguete
             thread_foguete = Thread(target = rocket.launch(base, planet))
             thread_foguete.start()
-        
-        '''else:
-            print('A base ' + self.name + ' tentou lançar o foguete ' + foguete + ', mas não conseguiu por falta de recursos!')'''
+
 
     def run(self):
 

@@ -96,7 +96,11 @@ class Rocket:
 
         # Caso o lançamento e a viagem seja bem sucedida
         if self.successfull_launch(base) and (self.do_we_have_a_problem() == False):
-            globals.release_sem_refuel() 
+            print(f"[{self.name} - {self.id}] launched.")
+            globals.release_sem_refuel() # Semaforo que indica que o foguete chegou na lua
+        
+        # Caso o foguete falhe de alguma forma, a lua não recebeu
+        # os novos recursos, então tenho que solicitar outro foguete
         else:
             globals.set_abastecer_lua(True)
 
