@@ -21,6 +21,29 @@ lock_oil = Lock()
 simulation_time = None
 planet_locks = None
 
+# Lista de planetas que ainda não são habitaveis
+planets_to_terraform = []
+
+def set_planets_terraform(planets):
+    global planets_to_terraform
+    planets_to_terraform = planets
+
+def get_planets_terraform():
+    global planets_to_terraform
+    return planets_to_terraform
+
+# Variável que armazena uma tupla com as quantidades 
+# de recursos que a lua necessita na forma (uranio, combustivel)
+moon_needs = None
+
+def set_moon_needs(resources):
+    global moon_needs
+    moon_needs = resources
+
+def get_moon_needs():
+    global moon_needs
+    return moon_needs
+
 # Abastecimento da lua
 # Importante que quando o código for
 # inicializado, dar um aquire no reabastecer refuel
@@ -37,17 +60,17 @@ def set_abastecer_lua(valor):
 
 # mutex localizado nas funções reabastecer_lua
 # e refuels, utilizado na lógica.
-mutex_reabastecer_refuel_uranium = Lock()
+sem_refuel = Semaphore(0)
 
-def acquire_reabastecer_refuel_uranium():
-    global mutex_reabastecer_refuel_uranium
-    mutex_reabastecer_refuel_uranium.acquire()
+def acquire_sem_refuel():
+    global sem_refuel
+    sem_refuel.acquire()
 
-def release_reabastecer_refuel_uranium():
-    global mutex_reabastecer_refuel_uranium
-    mutex_reabastecer_refuel_uranium.release()
+def release_sem_refuel():
+    global sem_refuel
+    sem_refuel.release()
 
-mutex_reabastecer_refuel_oil = Lock()
+'''mutex_reabastecer_refuel_oil = Semaphore(0)
 
 def acquire_reabastecer_refuel_oil():
     global mutex_reabastecer_refuel_oil
@@ -55,10 +78,10 @@ def acquire_reabastecer_refuel_oil():
 
 def release_reabastecer_refuel_oil():
     global mutex_reabastecer_refuel_oil
-    mutex_reabastecer_refuel_oil.release()
+    mutex_reabastecer_refuel_oil.release()'''
 
 # mutex localizado na verificação de abastecimento da lua
-mutex_verifica_abastecer_lua = Semaphore(value = 0)
+mutex_verifica_abastecer_lua = Lock()
 
 def acquire_verifica_abastecer_lua():
     global mutex_verifica_abastecer_lua

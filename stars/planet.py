@@ -19,7 +19,9 @@ class Planet(Thread):
 
     def planet_is_safe(self):
         print(f"🪐 - {self.name} IS COMPLETELY HABITABLE!")
-        del globals.planets[self.name.lower()]
+        planetas = globals.get_planets_terraform()
+        planetas.remove(self.name)
+        globals.set_planets_terraform(planetas)
 
     def run(self):
         globals.acquire_print()
