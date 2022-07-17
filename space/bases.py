@@ -252,7 +252,14 @@ class SpaceBase(Thread):
             
         if (self.base_rocket_resources('LION')):
             
-            base = (globals.get_bases_ref())[self.name.lower()]
+            nome = self.name
+            # condicional necessário por conta da diferença
+            # entre o nome dado na instancia do objeto e 
+            # da chave do dicionario de bases
+            if nome == 'CANAVERAL CAPE':
+                nome = 'canaveral_cape'
+            
+            base = (globals.get_bases_ref())[nome.lower()]
             resources = globals.get_moon_needs()
             foguete = Rocket('LION')
             foguete.fuel_cargo, foguete.uranium_cargo = resources
