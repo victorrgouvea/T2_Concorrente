@@ -21,7 +21,17 @@ class SimulationTime(Thread):
     def run(self):
         while(globals.get_release_system() == False):
             pass
-        while(True):
+        
+        # Mudanças feitas para terminar o programa e
+        # fazer o print final do total de anos
+        # O release no semaforo é para o caso de a
+        # lua estar esperando por recursos, o que 
+        # fazia o programa ficar travado
+        while(globals.get_planets_terraform() != []):
             print(f"{self.current_time} year(s) have passed...")
             self.current_time+=1
             sleep(1)
+        
+        globals.release_sem_refuel()
+        print(f"======== ALL PLANETS ARE TERRAFORMED! TOTAL YEARS: {self.current_time} ========")
+        print(globals.fog_choice)

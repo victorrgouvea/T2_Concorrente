@@ -172,16 +172,22 @@ class SpaceBase(Thread):
             # dos recursos que chegaram
             self.uranium += uranium
             self.fuel += fuel
-            
-            print('Lua abastecida com sucesso!')
 
         else:
             # Mutex para o acesso a mina de combustivel
             with globals.lock_oil:
                 oil_atual = oil.unities
+                # Se a quantidade que falta para a capacidade máxima da base
+                # for maior ou igual do que a quantidade disponivel na mina,
+                # a base pega toda a quantidade disponivel na mina
                 if self.constraints[1] - self.fuel >= oil_atual:
                     self.fuel += oil_atual
                     oil.unities -= oil_atual
+                
+                # Caso contrário, a mina tem quantidade suficiente para 
+                # completar a base, então definimos a quantidade com a 
+                # capacidade máxima e tiramos da mina o que foi adicionado
+                # para completar
                 else:
                     self.fuel = self.constraints[1]
                     oil.unities -= self.constraints[1] - self.fuel
@@ -218,16 +224,22 @@ class SpaceBase(Thread):
             # dos recursos que chegaram
             self.uranium += uranium
             self.fuel += fuel
-            
-            print('Lua abastecida com sucesso!')
 
         else:
             # Mutex para o acesso a mina de uranio
             with globals.lock_uranio:
                 mina_atual = mina.unities
+                # Se a quantidade que falta para a capacidade máxima da base
+                # for maior ou igual do que a quantidade disponivel na mina,
+                # a base pega toda a quantidade disponivel na mina
                 if self.constraints[0] - self.uranium >= mina_atual:
                     self.uranium += mina_atual
                     mina.unities -= mina_atual
+                
+                # Caso contrário, a mina tem quantidade suficiente para 
+                # completar a base, então definimos a quantidade com a 
+                # capacidade máxima e tiramos da mina o que foi adicionado
+                # para completar
                 else:
                     self.uranium = self.constraints[0]
                     mina.unities -= self.constraints[0] - self.uranium
@@ -239,6 +251,12 @@ class SpaceBase(Thread):
         # Utiliza um lock para garantir que só uma base verifique 
         # se a lua precisa de recursos por vez
         globals.acquire_verifica_abastecer_lua()
+
+        # Se a lua precisar ser reabastecida, a variável
+        # abastecer lua é setado como False, para que 
+        # nenhuma outra base tente reabastecer a lua ao 
+        # mesmo tempo, e então começa o processo de 
+        # lançamento do foguete para a lua
         if (globals.get_abastecer_lua() == True):
             globals.set_abastecer_lua(False)
             globals.release_verifica_abastecer_lua()
@@ -259,16 +277,24 @@ class SpaceBase(Thread):
             if nome == 'CANAVERAL CAPE':
                 nome = 'canaveral_cape'
             
+            # Pegamos a instancia da base que fará o lançamento e
+            # criamos o foguete como LION com as quantidades
+            # de recursos que a lua precisa
             base = (globals.get_bases_ref())[nome.lower()]
             resources = globals.get_moon_needs()
             foguete = Rocket('LION')
             foguete.fuel_cargo, foguete.uranium_cargo = resources
 
-            thread_foguete = Thread(target = foguete.voyage_moon(base))
+            # Criação da thread que fará o lançamento e todas as ações do foguete
+            thread_foguete = Thread(target = lambda: foguete.voyage_moon(base))
             thread_foguete.start()
 
     def lanca_foguete(self, foguete, planeta):
 
+        if foguete == 'FALCON':
+            globals.fog_choice[1] += 1
+        elif foguete == 'DRAGON':
+            globals.fog_choice[0] += 1
         # Teste para verificar e gastar/repor
         # os recursos utilizados pelo foguete
         if (self.base_rocket_resources(foguete)):
@@ -286,9 +312,11 @@ class SpaceBase(Thread):
             planet = (globals.get_planets_ref())[planeta.lower()]
             rocket = Rocket(foguete)
 
-            # Criação da thread que fará o lançamento e todas as ações do foguete
-            thread_foguete = Thread(target = rocket.launch(base, planet))
-            thread_foguete.start()
+            with globals.planet_locks.terraform_locks[planet.name.lower()]:
+                if planet.terraform > 0:
+                    # Criação da thread que fará o lançamento e todas as ações do foguete
+                    thread_foguete = Thread(target = lambda: rocket.launch(base, planet))
+                    thread_foguete.start()
 
 
     def run(self):
@@ -320,4 +348,9 @@ class SpaceBase(Thread):
                 self.verifica_abastecimento_lua()
             
             # Lançamento de um foguete aleatório em um planeta aleatório
-            self.lanca_foguete(choice(foguetes), choice(planetas))
+            # Uso o try e except para o caso da lista de planetas a serem terraformados
+            # ficar vazia no meio da execução e isso causar um erro
+            try: 
+                self.lanca_foguete(choice(foguetes), choice(planetas))
+            except:
+                print("O foguete não deve ser lançado pois todos os planetas já foram terraformados!")

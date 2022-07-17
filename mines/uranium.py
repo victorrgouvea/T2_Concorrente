@@ -39,5 +39,6 @@ class StoreHouse(Thread):
         while(globals.get_release_system() == False):
             pass
 
-        while(True):
+        # Mudança na condição do while para finalizar o programa
+        while(globals.get_planets_terraform() != []):
             self.produce()

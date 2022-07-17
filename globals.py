@@ -16,10 +16,18 @@ mutex_print = Lock()
 planets = {}
 bases = {}
 mines = {}
+simulation_time = None
+
+# Mutex para o acesso das quantidades de 
+# uranio e combustível nas minas
 lock_uranio = Lock()
 lock_oil = Lock()
-simulation_time = None
+
+# Instancia do objeto da classe PlanetLocks que
+# Contém os semaforos e locks necessários para cada planeta
+# (Ele é instanciado na função set_release_system())
 planet_locks = None
+fog_choice = [0, 0]
 
 # Lista de planetas que ainda não são habitaveis
 planets_to_terraform = []
@@ -44,10 +52,8 @@ def get_moon_needs():
     global moon_needs
     return moon_needs
 
-# Abastecimento da lua
-# Importante que quando o código for
-# inicializado, dar um aquire no reabastecer refuel
-# pra que seja inicializado adquirido
+# Varíavel que diz se a lua precisa
+# ou não ser reabastecida
 abastecer_lua = False
 
 def get_abastecer_lua():
@@ -58,7 +64,7 @@ def set_abastecer_lua(valor):
     global abastecer_lua
     abastecer_lua = valor
 
-# mutex localizado nas funções reabastecer_lua
+# semaforo localizado nas funções reabastecer_lua
 # e refuels, utilizado na lógica.
 sem_refuel = Semaphore(0)
 
@@ -70,17 +76,10 @@ def release_sem_refuel():
     global sem_refuel
     sem_refuel.release()
 
-'''mutex_reabastecer_refuel_oil = Semaphore(0)
-
-def acquire_reabastecer_refuel_oil():
-    global mutex_reabastecer_refuel_oil
-    mutex_reabastecer_refuel_oil.acquire()
-
-def release_reabastecer_refuel_oil():
-    global mutex_reabastecer_refuel_oil
-    mutex_reabastecer_refuel_oil.release()'''
 
 # mutex localizado na verificação de abastecimento da lua
+# para garantir que só uma base faça essa verificação e
+# o reabastecimento por vez
 mutex_verifica_abastecer_lua = Lock()
 
 def acquire_verifica_abastecer_lua():
@@ -128,6 +127,8 @@ def set_release_system():
     global release_system
     global planet_locks
     release_system = True
+    # Inicializo esse objeto aqui para que
+    # ele esteja ativo desde o inicio da execução
     planet_locks = PlanetLocks()
 
 def get_release_system():
