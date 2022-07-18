@@ -57,7 +57,7 @@ class SpaceBase(Thread):
             uranio = quant['URANIUM']
             fuel = quant[self.name]
         
-        uranium_ok =  False
+        uranium_ok = False
         oil_ok = False
       
         while(True):
@@ -69,11 +69,8 @@ class SpaceBase(Thread):
                 break
             
             # Verificação se tem recursos suficientes para o foguete
-            # Também verifico o caso de ser o segundo loop após a
-            # tentativa de reabastecer a base e o recurso ja ser suficiente
-            # no primeiro loop. Se ele já foi suficiente no primeiro loop e
-            # o desconto da sua quantidade já foi feita, não posso repetir isso
-            # no segundo loop
+            # Caso aquele recurso já seja suficiente, a variável
+            # é setada como True
             if (self.uranium >= uranio) and uranium_ok == False:
                 uranium_ok = True
                 
@@ -82,18 +79,12 @@ class SpaceBase(Thread):
 
             # não tem recurso suficiente pra abastecer o foguete
             if (not(uranium_ok) or not(oil_ok)):
-                # tenta reabastecer a base
-                # se conseguir o loop é refeito
                 
+                # tenta reabastecer a base
                 self.tenta_reabastecer_base(uranio, fuel)
-
-                # caso não tenha conseguido abastecer um dos combustíveis
-                # ele devolve a quantidade já retirada e, no caso do Lion,
-                # ele seta a variável de abastecer a lua como True indicando
-                # que não conseguiu lançar o foguete e a lua ainda não foi reabastecida
             
-            # tem recurso, então o foguete já foi abastecido
-            # e o loop não deve continuar
+            # tem recurso, então descontamos os recursos que vão ser
+            # utilizados pelo foguete e saimos do while retornando True
             else:
                 self.uranium -= uranio
                 self.fuel -= fuel
@@ -101,38 +92,16 @@ class SpaceBase(Thread):
     
     def tenta_reabastecer_base(self, q_uranium, q_fuel):
         
-        # não tem recurso suficiente pra lançar o foguete
-        uranium_ok = False
-        fuel_ok = False
-        # verifica se o recurso faltante é uranium
-        # e tenta abastecer
+        # verifica se o recurso faltante 
+        # é uranium e faz o reabastecimento
         if self.uranium < q_uranium:
             self.refuel_uranium()
-            if self.uranium < q_uranium:
-                uranium_ok = False
-            
-            else:
-                uranium_ok = True
-        else:
-            uranium_ok = True
 
-        # verifica se o recurso faltante é oil
-        # e tenta abastecer
+        # verifica se o recurso faltante 
+        # é oil e faz o reabastecimento
         if self.fuel < q_fuel:
             self.refuel_oil()
-            if self.fuel < q_fuel:
-                fuel_ok = False
 
-            else:
-                fuel_ok = True
-        else:
-            fuel_ok = True
-
-        # retorna a condição de abastecimento ou não
-        # a not aqui, ocorre pelo fato de o loop no método
-        # que chama, aconetecer no caso da variável que recebe
-        # ser falsa
-        return (not(uranium_ok and fuel_ok))    
 
     def refuel_oil(self):
 
@@ -245,6 +214,7 @@ class SpaceBase(Thread):
         # Utiliza um lock para garantir que só uma base verifique 
         # se a lua precisa de recursos por vez
         globals.acquire_verifica_abastecer_lua()
+
         # Se a lua precisar ser reabastecida, a variável
         # abastecer lua é setado como False, para que 
         # nenhuma outra base tente reabastecer a lua ao 
@@ -261,6 +231,8 @@ class SpaceBase(Thread):
 
     def lanca_foguete_lua(self):
             
+        # Teste para verificar e gastar/repor
+        # os recursos utilizados pelo foguete
         if (self.base_rocket_resources('LION')):
             
             nome = self.name

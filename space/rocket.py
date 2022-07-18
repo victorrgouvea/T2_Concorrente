@@ -142,5 +142,5 @@ class Rocket:
 
     def launch(self, base, planet):
         if(self.successfull_launch(base)):
-            print(f"[{self.name} - {self.id}] launched. {base.name}")
+            print(f"[{self.name} - {self.id}] launched.")
             self.voyage(planet)
