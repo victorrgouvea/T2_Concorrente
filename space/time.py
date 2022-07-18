@@ -34,4 +34,3 @@ class SimulationTime(Thread):
         
         globals.release_sem_refuel()
         print(f"======== ALL PLANETS ARE TERRAFORMED! TOTAL YEARS: {self.current_time} ========")
-        print(globals.fog_choice)

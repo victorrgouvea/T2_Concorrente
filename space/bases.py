@@ -43,25 +43,30 @@ class SpaceBase(Thread):
             print("IMPOSSÍVEL LANÇAR O FOGUETE LION DA LUA!")
             return False
         
-        abastecido = False
+        # Caso seja o foguete lion, precisamos saber se temos
+        # recursos suficientes para o seu lançamento e para
+        # a sua carga com os recursos da lua
+        if rocket_name == 'LION':
+            resources = globals.get_moon_needs()
+            uranio, fuel = resources
+            fuel += quant[self.name]
+
+        # Se for um dos foguetes de ataque, só precisamos
+        # dos recursos para o lançamento
+        else:
+            uranio = quant['URANIUM']
+            fuel = quant[self.name]
+        
         uranium_ok =  False
         oil_ok = False
       
-        while(not(abastecido)):
+        while(True):
 
-            # Caso seja o foguete lion, precisamos saber se temos
-            # recursos suficientes para o seu lançamento e para
-            # a sua carga com os recursos da lua
-            if rocket_name == 'LION':
-                resources = globals.get_moon_needs()
-                uranio, fuel = resources
-                fuel += quant[self.name]
-
-            # Se for um dos foguetes de ataque, só precisamos
-            # dos recursos para o lançamento
-            else:
-                uranio = quant['URANIUM']
-                fuel = quant[self.name]
+            # Teste para terminar a execução do while
+            # caso todos os planetas sejam terraformados durante
+            # a execução do while e o programa todo poder terminar
+            if globals.get_planets_terraform() == []:
+                break
             
             # Verificação se tem recursos suficientes para o foguete
             # Também verifico o caso de ser o segundo loop após a
@@ -71,38 +76,27 @@ class SpaceBase(Thread):
             # no segundo loop
             if (self.uranium >= uranio) and uranium_ok == False:
                 uranium_ok = True
-                self.uranium -= uranio
                 
             if (self.fuel >= fuel) and oil_ok == False:
                 oil_ok = True
-                self.fuel -= fuel
 
             # não tem recurso suficiente pra abastecer o foguete
             if (not(uranium_ok) or not(oil_ok)):
                 # tenta reabastecer a base
                 # se conseguir o loop é refeito
                 
-                abastecido = self.tenta_reabastecer_base(uranio, fuel)
+                self.tenta_reabastecer_base(uranio, fuel)
 
                 # caso não tenha conseguido abastecer um dos combustíveis
                 # ele devolve a quantidade já retirada e, no caso do Lion,
                 # ele seta a variável de abastecer a lua como True indicando
                 # que não conseguiu lançar o foguete e a lua ainda não foi reabastecida
-                if (abastecido):
-                    if (uranium_ok):
-                        self.uranium += uranio
-                    
-                    if (oil_ok):
-                        self.fuel += fuel
-
-                    if rocket_name == 'LION':
-                        globals.set_abastecer_lua(True)
-
-                    return False
             
             # tem recurso, então o foguete já foi abastecido
             # e o loop não deve continuar
             else:
+                self.uranium -= uranio
+                self.fuel -= fuel
                 return True
     
     def tenta_reabastecer_base(self, q_uranium, q_fuel):
@@ -251,7 +245,6 @@ class SpaceBase(Thread):
         # Utiliza um lock para garantir que só uma base verifique 
         # se a lua precisa de recursos por vez
         globals.acquire_verifica_abastecer_lua()
-
         # Se a lua precisar ser reabastecida, a variável
         # abastecer lua é setado como False, para que 
         # nenhuma outra base tente reabastecer a lua ao 
@@ -291,10 +284,6 @@ class SpaceBase(Thread):
 
     def lanca_foguete(self, foguete, planeta):
 
-        if foguete == 'FALCON':
-            globals.fog_choice[1] += 1
-        elif foguete == 'DRAGON':
-            globals.fog_choice[0] += 1
         # Teste para verificar e gastar/repor
         # os recursos utilizados pelo foguete
         if (self.base_rocket_resources(foguete)):
@@ -350,6 +339,7 @@ class SpaceBase(Thread):
             # Lançamento de um foguete aleatório em um planeta aleatório
             # Uso o try e except para o caso da lista de planetas a serem terraformados
             # ficar vazia no meio da execução e isso causar um erro
+        
             try: 
                 self.lanca_foguete(choice(foguetes), choice(planetas))
             except:

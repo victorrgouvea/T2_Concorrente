@@ -27,7 +27,6 @@ lock_oil = Lock()
 # Contém os semaforos e locks necessários para cada planeta
 # (Ele é instanciado na função set_release_system())
 planet_locks = None
-fog_choice = [0, 0]
 
 # Lista de planetas que ainda não são habitaveis
 planets_to_terraform = []
